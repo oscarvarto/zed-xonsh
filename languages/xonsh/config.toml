@@ -1,0 +1,77 @@
+name = "Xonsh"
+grammar = "python"
+path_suffixes = ["xsh", "xonshrc"]
+first_line_pattern = '^#!.*\bxonsh\b'
+line_comments = ["# "]
+autoclose_before = ";:.,=}])>"
+tab_size = 4
+hard_tabs = false
+
+brackets = [
+    # Xonsh subprocess operators - captured subprocess
+    { start = "$(", end = ")", close = true, newline = false },
+    # Xonsh subprocess operators - uncaptured subprocess
+    { start = "$[", end = "]", close = true, newline = false },
+    # Xonsh subprocess operators - captured command pipeline
+    { start = "!(", end = ")", close = true, newline = false },
+    # Xonsh subprocess operators - hidden command pipeline
+    { start = "![", end = "]", close = true, newline = false },
+    # Xonsh subprocess operators - command substitution with evaluation
+    { start = "@$(", end = ")", close = true, newline = false },
+    # Xonsh subprocess operators - Python evaluation in subprocess
+    { start = "@(", end = ")", close = true, newline = false },
+    # Xonsh environment variable braces
+    { start = "${", end = "}", close = true, newline = false },
+    # Xonsh path literals (return pathlib.Path)
+    { start = "p\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "p'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pf\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pf'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pr\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pr'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Xonsh glob backticks with prefixes
+    { start = "g`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "r`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "p`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "f`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pf`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "pg`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "gf`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "`", end = "`", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python f-strings
+    { start = "f\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "f'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python b-strings
+    { start = "b\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "b'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python u-strings
+    { start = "u\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "u'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python r-strings
+    { start = "r\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "r'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python rb-strings
+    { start = "rb\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "rb'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Python t-strings (template strings)
+    { start = "t\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+    { start = "t'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
+    # Triple-quoted strings
+    { start = "\"\"\"", end = "\"\"\"", close = true, newline = false, not_in = ["string"] },
+    { start = "'''", end = "'''", close = true, newline = false, not_in = ["string"] },
+    # Standard brackets
+    { start = "{", end = "}", close = true, newline = true },
+    { start = "[", end = "]", close = true, newline = true },
+    { start = "(", end = ")", close = true, newline = true },
+    { start = "\"", end = "\"", close = true, newline = false, not_in = ["string"] },
+    { start = "'", end = "'", close = true, newline = false, not_in = ["string"] },
+]
+
+auto_indent_using_last_non_empty_line = false
+increase_indent_pattern = "^[^#].*:\\s*(#.*)?$"
+decrease_indent_patterns = [
+    { pattern = "^\\s*elif\\b.*:\\s*(#.*)?", valid_after = ["if", "elif"] },
+    { pattern = "^\\s*else\\b.*:\\s*(#.*)?", valid_after = ["if", "elif", "for", "while", "except"] },
+    { pattern = "^\\s*except\\b.*:\\s*(#.*)?", valid_after = ["try", "except"] },
+    { pattern = "^\\s*finally\\b.*:\\s*(#.*)?", valid_after = ["try", "except", "else"] },
+]
