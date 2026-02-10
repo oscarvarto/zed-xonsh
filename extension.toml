@@ -1,17 +1,15 @@
 id = "xonsh"
 name = "Xonsh"
-version = "0.1.0"
+version = "0.2.0"
 schema_version = 1
 authors = ["Oscar Vargas Torres <contact@oscarvarto.mx>"]
 description = "Xonsh shell language support - Python-powered shell with additional shell syntax"
 repository = "https://github.com/oscarvarto/zed-xonsh"
 
-# Xonsh reuses Python's tree-sitter grammar since it's a Python superset.
-# The grammar is built into Zed, so we don't need to specify it here.
+[grammars.xonsh]
+repository = "https://github.com/oscarvarto/xonsh-tree-sitter"
+rev = "5c94a94909011f17fc22d045f8b94eb26ad7a152"
 
-[language_servers.basedpyright]
-name = "Basedpyright"
+[language_servers.xonsh-lsp]
+name = "xonsh-lsp"
 languages = ["Xonsh"]
-
-[language_servers.basedpyright.language_ids]
-"Xonsh" = "python"
