@@ -8,7 +8,7 @@ repository = "https://github.com/oscarvarto/zed-xonsh"
 
 [grammars.xonsh]
 repository = "https://github.com/oscarvarto/xonsh-tree-sitter"
-rev = "5c94a94909011f17fc22d045f8b94eb26ad7a152"
+rev = "5c4e7d8"
 
 [language_servers.xonsh-lsp]
 name = "xonsh-lsp"
