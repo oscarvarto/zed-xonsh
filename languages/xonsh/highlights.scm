@@ -1,19 +1,41 @@
-; Xonsh syntax highlighting for Zed
-; Uses tree-sitter-xonsh grammar (FoamScience) which extends tree-sitter-python
+; Xonsh-specific highlighting queries
+; These extend Python highlights with xonsh syntax
 
 ; ===========================================================================
-; Xonsh: Environment Variables
+; Bare Subprocess (highest priority - detected by scanner heuristics)
+; ===========================================================================
+
+; Bare subprocess detected by scanner (e.g., "ls -la", "cd $HOME")
+(bare_subprocess
+  body: (subprocess_body
+    (subprocess_command
+      (subprocess_argument
+        (subprocess_word) @function.call))))
+
+; Highlight the first word of a bare subprocess as a command
+(bare_subprocess
+  body: (subprocess_body
+    (subprocess_command
+      . (subprocess_argument
+          (subprocess_word) @function.builtin))))
+
+; ===========================================================================
+; Environment Variables (high priority)
 ; ===========================================================================
 
 ((env_variable
   "$" @punctuation.special
-  (identifier) @variable.special) @_env
+  (identifier) @variable.builtin) @_env
   (#set! "priority" 110))
 
 ((env_variable_braced
   "${" @punctuation.special
   "}" @punctuation.special) @_env_braced
   (#set! "priority" 110))
+
+; ===========================================================================
+; Environment Variable Assignment and Deletion
+; ===========================================================================
 
 (env_assignment
   "=" @operator)
@@ -22,45 +44,51 @@
   "del" @keyword)
 
 ; ===========================================================================
-; Xonsh: Subprocess Operators
+; Subprocess Operators (high priority to override punctuation.bracket)
 ; ===========================================================================
 
+; Captured subprocess $()
 ((captured_subprocess
   "$(" @punctuation.special
   ")" @punctuation.special) @_cap_sub
   (#set! "priority" 110))
 
+; Captured subprocess object !()
 ((captured_subprocess_object
   "!(" @punctuation.special
   ")" @punctuation.special) @_cap_obj
   (#set! "priority" 110))
 
+; Uncaptured subprocess $[]
 ((uncaptured_subprocess
   "$[" @punctuation.special
   "]" @punctuation.special) @_uncap_sub
   (#set! "priority" 110))
 
+; Uncaptured subprocess object ![]
 ((uncaptured_subprocess_object
   "![" @punctuation.special
   "]" @punctuation.special) @_uncap_obj
   (#set! "priority" 110))
 
 ; ===========================================================================
-; Xonsh: Python Evaluation in Subprocess
+; Python Evaluation in Subprocess
 ; ===========================================================================
 
+; @() - Python evaluation
 ((python_evaluation
   "@(" @punctuation.special
   ")" @punctuation.special) @_py_eval
   (#set! "priority" 110))
 
+; @$() - Tokenized substitution
 ((tokenized_substitution
   "@$(" @punctuation.special
   ")" @punctuation.special) @_tok_sub
   (#set! "priority" 110))
 
 ; ===========================================================================
-; Xonsh: Special @ Object
+; Special @ Object
 ; ===========================================================================
 
 (at_object
@@ -69,26 +97,56 @@
   attribute: (identifier) @property)
 
 ; ===========================================================================
-; Xonsh: Glob Patterns
+; Glob Patterns
 ; ===========================================================================
 
+; Regex glob `pattern`
 ((regex_glob
   "`" @punctuation.special
-  (regex_glob_content) @string.regex
+  (regex_glob_content) @string.regexp
   "`" @punctuation.special) @_regex_glob
   (#set! "priority" 110))
 
+; Standard glob g`pattern`
 ((glob_pattern
   "g`" @punctuation.special
   (glob_pattern_content) @string.special
   "`" @punctuation.special) @_glob
   (#set! "priority" 110))
 
+; Formatted glob f`pattern`
 ((formatted_glob
   "f`" @punctuation.special
   (formatted_glob_content) @string.special
   "`" @punctuation.special) @_fglob
   (#set! "priority" 110))
+
+; ===========================================================================
+; Path Literals
+; ===========================================================================
+
+(path_string
+  prefix: (path_prefix) @string.special.symbol)
+
+; ===========================================================================
+; Subprocess Modifiers (@json, @yaml, etc.)
+; ===========================================================================
+
+(subprocess_modifier) @attribute
+
+; ===========================================================================
+; Scoped Environment Variable Command ($VAR=value cmd)
+; ===========================================================================
+
+(env_scoped_command
+  env: (env_prefix
+    (env_variable
+      (identifier) @variable.builtin)
+    "=" @operator))
+
+; ===========================================================================
+; Glob Path (gp`pattern`)
+; ===========================================================================
 
 ((glob_path
   "gp`" @punctuation.special
@@ -96,51 +154,51 @@
   "`" @punctuation.special) @_glob_path
   (#set! "priority" 110))
 
+; Regex path glob (rp`pattern`)
 ((regex_path_glob
   "rp`" @punctuation.special
-  (regex_path_content) @string.regex
+  (regex_path_content) @string.regexp
   "`" @punctuation.special) @_rp_glob
   (#set! "priority" 110))
 
+; Custom function glob @func`pattern`
 ((custom_function_glob
   "@" @punctuation.special
-  function: (identifier) @function
+  function: (identifier) @function.call
   "`" @punctuation.special
   pattern: (custom_glob_content) @string.special
   "`" @punctuation.special) @_custom_glob
   (#set! "priority" 110))
 
 ; ===========================================================================
-; Xonsh: Path Literals
+; Brace Expansion
 ; ===========================================================================
 
-(path_string
-  prefix: (path_prefix) @string.special.symbol)
+; Brace expansion list {a,b,c}
+(brace_expansion
+  "{" @punctuation.special
+  "}" @punctuation.special)
+
+(brace_expansion
+  "," @punctuation.delimiter)
+
+; Range expansion {1..5} - matched as atomic token
+(brace_range) @string.special
+
+; List items
+(brace_item) @string.special
+
+; Brace literal {123} - single item, no expansion
+(brace_literal) @string.special
 
 ; ===========================================================================
-; Xonsh: Subprocess Modifiers
-; ===========================================================================
-
-(subprocess_modifier) @attribute
-
-; ===========================================================================
-; Xonsh: Scoped Environment Variable Command ($VAR=value cmd)
-; ===========================================================================
-
-(env_scoped_command
-  env: (env_prefix
-    (env_variable
-      (identifier) @variable.special)
-    "=" @operator))
-
-; ===========================================================================
-; Xonsh: Subprocess Body - Command and Arguments
+; Subprocess Body - Command and Arguments
 ; ===========================================================================
 
 ; First word of subprocess command is the command name
 (subprocess_command
   . (subprocess_argument
-      (subprocess_word) @function))
+      (subprocess_word) @function.call))
 
 ; Subsequent subprocess words are arguments
 (subprocess_argument
@@ -151,73 +209,77 @@
   (#match? @variable.parameter "^-"))
 
 ; ===========================================================================
-; Xonsh: Subprocess Pipeline
+; Subprocess Pipeline
 ; ===========================================================================
 
+; Command after pipe
 (subprocess_pipeline
   (subprocess_command
     . (subprocess_argument
-        (subprocess_word) @function)))
+        (subprocess_word) @function.call)))
 
 ; ===========================================================================
-; Xonsh: Subprocess Logical (&&, ||, and, or)
+; Subprocess Logical (&&, ||, and, or)
 ; ===========================================================================
 
+; Command after logical operator
 (subprocess_logical
   (subprocess_command
     . (subprocess_argument
-        (subprocess_word) @function)))
+        (subprocess_word) @function.call)))
 
 ; ===========================================================================
-; Xonsh: Subprocess Redirections
+; Subprocess Redirections
 ; ===========================================================================
+
+; Redirect target (filename, variable, etc.)
+(redirect_target
+  (subprocess_word) @string.special.path)
 
 (redirect_target
-  (subprocess_word) @string.special)
-
-(redirect_target
-  (env_variable) @variable.special)
+  (env_variable) @variable.builtin)
 
 ; ===========================================================================
-; Xonsh: Pipes and Operators
+; Pipes and Operators
 ; ===========================================================================
 
 (pipe_operator) @operator
-(redirect_operator) @operator
-(stream_merge_operator) @operator
-(logical_operator) @operator
+
+(redirect_operator) @keyword.operator
+
+(stream_merge_operator) @keyword.operator
+
+(logical_operator) @keyword.operator
 
 ; ===========================================================================
-; Xonsh: Brace Expansion
+; Background Execution
 ; ===========================================================================
 
-(brace_expansion
-  "{" @punctuation.special
-  "}" @punctuation.special)
-
-(brace_expansion
-  "," @punctuation.delimiter)
-
-(brace_range) @string.special
-(brace_item) @string.special
-(brace_literal) @string.special
+; Note: background_command uses an external token (_background_amp) which
+; is anonymous and cannot be queried directly. The command itself is
+; highlighted via xonsh_expression.
 
 ; ===========================================================================
-; Xonsh: Xontrib Statements
+; Xontrib Statements
 ; ===========================================================================
 
+; xontrib keyword
 (xontrib_statement
   "xontrib" @keyword)
 
+; load keyword
 (xontrib_statement
   "load" @keyword)
 
-(xontrib_name) @property
+; xontrib names (the packages being loaded)
+(xontrib_name) @module
 
 ; ===========================================================================
-; Xonsh: Macro Calls
+; Macro Calls
 ; ===========================================================================
 
+; Macro call: func!(args) - name highlighted same as function definition
+; Note: "!(" is a single token, cannot highlight ! separately
 (macro_call
   name: (identifier) @function
   "!(" @punctuation.special
@@ -227,118 +289,73 @@
   argument: (macro_argument) @string.special)
 
 ; ===========================================================================
-; Xonsh: Subprocess Macro (cmd! args)
+; Subprocess Macro (cmd! args)
 ; ===========================================================================
 
+; The subprocess macro argument is raw text
 (subprocess_macro
   argument: (subprocess_macro_argument) @string.special)
 
 ; ===========================================================================
-; Xonsh: Block Macro (with! Context():)
+; Block Macro (with! Context():)
 ; ===========================================================================
 
+; Block macro "with!" is consumed by the external scanner (_block_macro_start)
+; Highlight the block_macro_statement context and alias instead
 (block_macro_statement
-  "with!" @keyword)
+  context: (_) @type
+  alias: (identifier) @variable)
 
 ; ===========================================================================
-; Xonsh: Help Expressions
+; Help Expressions
 ; ===========================================================================
 
+; Single ? for help
 (help_expression
   "?" @punctuation.special)
 
+; Double ?? for super help (source)
 (super_help_expression
   "??" @punctuation.special)
 
 ; ===========================================================================
-; Xonsh: Bare Subprocess
+; Python Highlights
 ; ===========================================================================
 
-(bare_subprocess
-  body: (subprocess_body
-    (subprocess_command
-      . (subprocess_argument
-          (subprocess_word) @function))))
-
-; ===========================================================================
-; Python: Comments
-; ===========================================================================
-
+; Comments
 (comment) @comment
 
-; ===========================================================================
-; Python: Strings
-; ===========================================================================
-
+; Strings
 (string) @string
 (string_content) @string
+
+; Escape sequences
 (escape_sequence) @string.escape
 
-; ===========================================================================
-; Python: Docstrings
-; ===========================================================================
-
-(module
-  . (expression_statement (string) @comment.doc)+)
-
-(module
-  . (comment) @comment*
-  . (expression_statement (string) @comment.doc)+)
-
-(class_definition
-  body: (block . (expression_statement (string) @comment.doc)+))
-
-(class_definition
-  body: (block
-    . (comment) @comment*
-    . (expression_statement (string) @comment.doc)+))
-
-(function_definition
-  body: (block . (expression_statement (string) @comment.doc)+))
-
-; ===========================================================================
-; Python: Numbers
-; ===========================================================================
-
+; Numbers
 (integer) @number
-(float) @number
+(float) @number.float
 
-; ===========================================================================
-; Python: Booleans and Constants
-; ===========================================================================
-
+; Booleans
 ((identifier) @boolean
   (#any-of? @boolean "True" "False"))
 
+; None
 ((identifier) @constant.builtin
   (#eq? @constant.builtin "None"))
 
-; ===========================================================================
-; Python: Identifiers
-; ===========================================================================
+; Self
+((identifier) @variable.builtin
+  (#eq? @variable.builtin "self"))
 
+; cls
+((identifier) @variable.builtin
+  (#eq? @variable.builtin "cls"))
+
+; Identifiers
 (identifier) @variable
 
-; Self/cls
-((identifier) @variable.special
-  (#any-of? @variable.special "self" "cls"))
-
-; CamelCase for classes
-((identifier) @type
-  (#match? @type "^_*[A-Z][A-Za-z0-9_]*$"))
-
-; ALL_CAPS for constants
-((identifier) @constant
-  (#match? @constant "^_*[A-Z][A-Z0-9_]*$"))
-
-; Attributes
-(attribute
-  attribute: (identifier) @property)
-
-; ===========================================================================
-; Python: Function Definitions
-; ===========================================================================
-
+; Function definitions
 (function_definition
   name: (identifier) @function)
 
@@ -346,74 +363,42 @@
 (parameters
   (identifier) @variable.parameter)
 
-(default_parameter
-  name: (identifier) @variable.parameter)
-
-(typed_parameter
-  (identifier) @variable.parameter)
-
-(typed_default_parameter
-  name: (identifier) @variable.parameter)
-
-; ===========================================================================
-; Python: Function Calls
-; ===========================================================================
-
+; Function calls
 (call
-  function: (identifier) @function)
+  function: (identifier) @function.call)
 
 (call
   function: (attribute
-    attribute: (identifier) @function))
+    attribute: (identifier) @function.method.call))
 
-; ===========================================================================
-; Python: Class Definitions
-; ===========================================================================
-
+; Class definitions
 (class_definition
   name: (identifier) @type)
 
-; ===========================================================================
-; Python: Decorators
-; ===========================================================================
-
+; Decorators
 (decorator
   "@" @attribute
   (identifier) @attribute)
 
-(decorator
-  "@" @attribute
-  (call function: (identifier) @attribute))
+; Attributes
+(attribute
+  attribute: (identifier) @property)
 
-; ===========================================================================
-; Python: Imports
-; ===========================================================================
-
+; Imports
 (import_statement
-  "import" @keyword)
+  "import" @keyword.import)
 
 (import_from_statement
-  "from" @keyword
-  "import" @keyword)
+  "from" @keyword.import
+  "import" @keyword.import)
 
 (aliased_import
-  "as" @keyword)
+  "as" @keyword.import)
 
 (dotted_name
-  (identifier) @property)
+  (identifier) @module)
 
-; ===========================================================================
-; Python: Type Annotations
-; ===========================================================================
-
-(type (identifier) @type)
-(generic_type (identifier) @type)
-(type_alias_statement "type" @keyword)
-
-; ===========================================================================
-; Python: Keywords
-; ===========================================================================
-
+; Keywords
 [
   "and"
   "as"
@@ -452,10 +437,13 @@
   "type"
 ] @keyword
 
-; ===========================================================================
-; Python: Operators
-; ===========================================================================
+; Exception handling
+(raise_statement "raise" @keyword.exception)
+(try_statement "try" @keyword.exception)
+(except_clause "except" @keyword.exception)
+(finally_clause "finally" @keyword.exception)
 
+; Operators
 [
   "+"
   "-"
@@ -480,6 +468,7 @@
   ":="
 ] @operator
 
+; Assignment operators
 [
   "="
   "+="
@@ -497,10 +486,7 @@
   "@="
 ] @operator
 
-; ===========================================================================
-; Python: Punctuation
-; ===========================================================================
-
+; Punctuation (lower priority than xonsh-specific)
 [
   "("
   ")"
@@ -518,16 +504,9 @@
   "->"
 ] @punctuation.delimiter
 
-(interpolation
-  "{" @punctuation.special
-  "}" @punctuation.special) @embedded
-
-; ===========================================================================
-; Python: Builtins
-; ===========================================================================
-
-((identifier) @function
-  (#any-of? @function
+; Builtins
+((identifier) @function.builtin
+  (#any-of? @function.builtin
     "abs" "all" "any" "ascii" "bin" "bool" "breakpoint" "bytearray"
     "bytes" "callable" "chr" "classmethod" "compile" "complex"
     "delattr" "dict" "dir" "divmod" "enumerate" "eval" "exec"
@@ -540,18 +519,10 @@
     "tuple" "type" "vars" "zip" "__import__"))
 
 ; Xonsh builtins
-((identifier) @function
-  (#any-of? @function
+((identifier) @function.builtin
+  (#any-of? @function.builtin
     "aliases" "xontrib" "source" "xonfig" "xonsh"
     "cd" "pushd" "popd" "dirs"))
 
-; Xonsh special identifiers
-((identifier) @variable.special
-  (#any-of? @variable.special
-    "__xonsh__" "XSH" "aliases" "events"))
-
-; Exception handling keywords
-(raise_statement "raise" @keyword)
-(try_statement "try" @keyword)
-(except_clause "except" @keyword)
-(finally_clause "finally" @keyword)
+; Error nodes
+(ERROR) @error

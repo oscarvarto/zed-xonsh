@@ -7,8 +7,8 @@ description = "Xonsh shell language support - Python-powered shell with addition
 repository = "https://github.com/oscarvarto/zed-xonsh"
 
 [grammars.xonsh]
-repository = "https://github.com/oscarvarto/xonsh-tree-sitter"
-rev = "5c4e7d8c08216d41dcf588a56c875dc0f02594bf"
+repository = "https://github.com/FoamScience/tree-sitter-xonsh"
+rev = "b46f3a07a7fa12060e6daa21d828f32dd0a0ff61"
 
 [language_servers.xonsh-lsp]
 name = "xonsh-lsp"
